@@ -46,6 +46,7 @@ class CTClampSensor : public sensor::Sensor, public PollingComponent {
   bool is_sampling_ = false;
   /// Calibrate offset value once at boot
   bool is_calibrating_offset_ = false;
+  bool scheduled_ = false;
 };
 
 }  // namespace ct_clamp

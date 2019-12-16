@@ -27,10 +27,40 @@ void CTClampSensor::dump_config() {
 }
 
 void CTClampSensor::update() {
-  if (this->is_calibrating_offset_)
+  if (this->is_calibrating_offset_ || this->scheduled_)
     return;
 
   // Update only starts the sampling phase, in loop() the actual sampling is happening.
+
+  SharedComponent *shared_adc = dynamic_cast<SharedComponent *>(this->source_);
+
+  if (shared_adc) {
+    shared_adc->request_time(this->sample_duration_, [this]() {
+      // Request a high loop() execution interval during sampling phase.
+      this->high_freq_.start();
+
+      // Set sampling values
+      this->is_sampling_ = true;
+      this->num_samples_ = 0;
+      this->sample_sum_ = 0.0f;
+    }, [this]() {
+      this->is_sampling_ = false;
+      this->high_freq_.stop();
+
+      if (this->num_samples_ == 0) {
+        // Shouldn't happen, but let's not crash if it does.
+        this->publish_state(NAN);
+        return;
+      }
+
+      float raw = this->sample_sum_ / this->num_samples_;
+      float irms = std::sqrt(raw);
+      this->publish_state(irms);
+      this->scheduled_ = false;
+    });
+    this->scheduled_ = true;
+    return;
+  }
 
   // Request a high loop() execution interval during sampling phase.
   this->high_freq_.start();
