@@ -20,7 +20,7 @@ class CTClampSensor : public sensor::Sensor, public PollingComponent {
   }
 
   void set_sample_duration(uint32_t sample_duration) { sample_duration_ = sample_duration; }
-  void set_source(voltage_sampler::VoltageSampler *source) { source_ = source; }
+  void set_source(voltage_sampler::VoltageSampler *source, Component *source_component) { source_ = source; source_component_ = source_component; }
 
  protected:
   /// High Frequency loop() requester used during sampling phase.
@@ -30,6 +30,7 @@ class CTClampSensor : public sensor::Sensor, public PollingComponent {
   uint32_t sample_duration_;
   /// The sampling source to read values from.
   voltage_sampler::VoltageSampler *source_;
+  Component *source_component_;
 
   /** The DC offset of the circuit.
    *
@@ -46,6 +47,7 @@ class CTClampSensor : public sensor::Sensor, public PollingComponent {
   bool is_sampling_ = false;
   /// Calibrate offset value once at boot
   bool is_calibrating_offset_ = false;
+  bool scheduled_ = false;
 };
 
 }  // namespace ct_clamp

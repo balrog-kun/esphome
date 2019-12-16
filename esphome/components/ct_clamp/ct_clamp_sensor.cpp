@@ -27,16 +27,21 @@ void CTClampSensor::dump_config() {
 }
 
 void CTClampSensor::update() {
-  if (this->is_calibrating_offset_)
+  if (this->is_calibrating_offset_ || this->scheduled_)
     return;
 
   // Update only starts the sampling phase, in loop() the actual sampling is happening.
 
-  // Request a high loop() execution interval during sampling phase.
-  this->high_freq_.start();
+  this->source_component_->request_time(this->sample_duration_, [this]() {
+    // Request a high loop() execution interval during sampling phase.
+    this->high_freq_.start();
 
-  // Set timeout for ending sampling phase
-  this->set_timeout("read", this->sample_duration_, [this]() {
+    // Set sampling values
+    this->is_sampling_ = true;
+    this->num_samples_ = 0;
+    this->sample_sum_ = 0.0f;
+  }, [this]() {
+    this->scheduled_ = false;
     this->is_sampling_ = false;
     this->high_freq_.stop();
 
@@ -52,10 +57,7 @@ void CTClampSensor::update() {
     this->publish_state(irms);
   });
 
-  // Set sampling values
-  this->is_sampling_ = true;
-  this->num_samples_ = 0;
-  this->sample_sum_ = 0.0f;
+  this->scheduled_ = true;
 }
 
 void CTClampSensor::loop() {

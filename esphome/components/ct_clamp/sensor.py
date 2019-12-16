@@ -23,5 +23,5 @@ def to_code(config):
     yield sensor.register_sensor(var, config)
 
     sens = yield cg.get_variable(config[CONF_SENSOR])
-    cg.add(var.set_source(sens))
+    cg.add(var.set_source(sens, sens))
     cg.add(var.set_sample_duration(config[CONF_SAMPLE_DURATION]))
