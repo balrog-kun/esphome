@@ -128,6 +128,8 @@ class Component {
 
   bool has_overridden_loop() const;
 
+  virtual void request_time(uint32_t period, std::function<void()> &&begin, std::function<void()> &&end);  // NOLINT
+
  protected:
   virtual void call_loop();
   virtual void call_setup();
@@ -199,6 +201,7 @@ class Component {
 
   uint32_t component_state_{0x0000};  ///< State of this component.
   float setup_priority_override_{NAN};
+  uint32_t busy_until_ = 0;
 };
 
 /** This class simplifies creating components that periodically check a state.
@@ -207,7 +210,7 @@ class Component {
  * after startup. Note that this class cannot guarantee a correct timing, as it's not using timers, just
  * a software polling feature with set_interval() from Component.
  */
-class PollingComponent : public Component {
+class PollingComponent : virtual public Component {
  public:
   PollingComponent() : PollingComponent(0) {}
 
@@ -263,6 +266,17 @@ class Nameable {
   std::string object_id_;
   uint32_t object_id_hash_;
   bool internal_{false};
+};
+
+class SharedComponentUser : virtual public Component {
+ public:
+  SharedComponentUser(Component *parent) : parent_(parent) {};
+  virtual void request_time(uint32_t period, std::function<void()> &&begin, std::function<void()> &&end) override {  // NOLINT
+    parent_->request_time(period, std::move(begin), std::move(end));
+  }
+
+ protected:
+  Component *parent_;
 };
 
 }  // namespace esphome

@@ -153,6 +153,18 @@ bool Component::has_overridden_loop() const {
   return loop_overridden || call_loop_overridden;
 }
 
+void Component::request_time(uint32_t period, std::function<void()> &&begin, std::function<void()> &&end) {
+  uint32_t now = millis();
+  uint32_t start_in = this->busy_until_ > now ? this->busy_until_ - now : 0;
+
+  // Add a 10ms buffer.  Ideally we should have our own end callback and invoke the user's end CB from there,
+  // then immediately do the begin CB of the next request, and only after that returns schedule the next end
+  // callback, but this complicates things a little bit.
+  this->busy_until_ = now + start_in + period + 10;
+  App.scheduler.set_timeout(this, "", start_in, std::move(begin));
+  App.scheduler.set_timeout(this, "", start_in + period, std::move(end));
+}
+
 PollingComponent::PollingComponent(uint32_t update_interval) : Component(), update_interval_(update_interval) {}
 
 void PollingComponent::call_setup() {
