@@ -30,7 +30,7 @@ enum ADS1115Gain {
 
 class ADS1115Sensor;
 
-class ADS1115Component : public Component, public i2c::I2CDevice {
+class ADS1115Component : virtual public Component, public i2c::I2CDevice, public SharedComponent {
  public:
   void register_sensor(ADS1115Sensor *obj) { this->sensors_.push_back(obj); }
   /// Set up the internal sensor array.
@@ -50,9 +50,9 @@ class ADS1115Component : public Component, public i2c::I2CDevice {
 };
 
 /// Internal holder class that is in instance of Sensor so that the hub can create individual sensors.
-class ADS1115Sensor : public sensor::Sensor, public PollingComponent, public voltage_sampler::VoltageSampler {
+class ADS1115Sensor : public sensor::Sensor, public PollingComponent, public voltage_sampler::VoltageSampler, public SharedComponentUser {
  public:
-  ADS1115Sensor(ADS1115Component *parent) : parent_(parent) {}
+  ADS1115Sensor(ADS1115Component *parent) : SharedComponentUser(parent), parent_(parent) {}
   void update() override;
   void set_multiplexer(ADS1115Multiplexer multiplexer) { multiplexer_ = multiplexer; }
   void set_gain(ADS1115Gain gain) { gain_ = gain; }

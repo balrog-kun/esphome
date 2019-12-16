@@ -207,7 +207,7 @@ class Component {
  * after startup. Note that this class cannot guarantee a correct timing, as it's not using timers, just
  * a software polling feature with set_interval() from Component.
  */
-class PollingComponent : public Component {
+class PollingComponent : virtual public Component {
  public:
   PollingComponent() : PollingComponent(0) {}
 
@@ -263,6 +263,24 @@ class Nameable {
   std::string object_id_;
   uint32_t object_id_hash_;
   bool internal_{false};
+};
+
+class SharedComponent : virtual public Component {
+ public:
+  SharedComponent() : busy_until_(0) { this->busy_until_ = 0; };
+  void request_time(uint32_t period, std::function<void()> &&begin, std::function<void()> &&end);  // NOLINT
+
+ protected:
+  uint32_t busy_until_ = 0;
+};
+
+class SharedComponentUser {
+ public:
+  SharedComponentUser(SharedComponent *parent) : parent_(parent) {};
+  void request_time(uint32_t period, std::function<void()> &&begin, std::function<void()> &&end);  // NOLINT
+
+ protected:
+  SharedComponent *parent_;
 };
 
 }  // namespace esphome
